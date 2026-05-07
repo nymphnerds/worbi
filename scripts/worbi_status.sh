@@ -8,6 +8,11 @@ FRONTEND_URL="${WORBI_FRONTEND_URL:-http://localhost:8082}"
 BACKEND_URL="${WORBI_BACKEND_URL:-http://localhost:8082}"
 HEALTH_URL="${WORBI_HEALTH_URL:-http://localhost:8082/api/health}"
 SERVER_DIR="${INSTALL_DIR}/server"
+PORT="${WORBI_PORT:-8082}"
+
+if [[ "${HEALTH_URL}" =~ :([0-9]+)(/|$) ]]; then
+  PORT="${BASH_REMATCH[1]}"
+fi
 
 pid_running() {
   local pid_file="$1"
@@ -23,13 +28,35 @@ find_server_pids() {
   server_dir_resolved="$(readlink -f "${SERVER_DIR}" 2>/dev/null || true)"
   [[ -n "${server_dir_resolved}" ]] || return 0
 
-  for pid in $(pgrep -f "node src/index.js" 2>/dev/null || true); do
+  local install_dir_resolved
+  install_dir_resolved="$(readlink -f "${INSTALL_DIR}" 2>/dev/null || true)"
+
+  while read -r pid args; do
+    [[ -n "${pid}" ]] || continue
     local cwd
     cwd="$(readlink -f "/proc/${pid}/cwd" 2>/dev/null || true)"
-    if [[ "${cwd}" == "${server_dir_resolved}" ]]; then
+    if [[ "${cwd}" == "${server_dir_resolved}" ]] ||
+      [[ "${args}" == *"${server_dir_resolved}/src/index.js"* ]] ||
+      [[ "${args}" == *"${install_dir_resolved}/server/src/index.js"* ]] ||
+      [[ "${args}" == *"node src/index.js"* && "${args}" == *"worbi"* ]]; then
       echo "${pid}"
     fi
-  done
+  done < <(ps -eo pid=,args= 2>/dev/null | awk '/node/ && /src\/index\.js/ {print $0}')
+}
+
+find_port_pids() {
+  if command -v ss >/dev/null 2>&1; then
+    ss -H -ltnp "sport = :${PORT}" 2>/dev/null \
+      | sed -n 's/.*pid=\([0-9]\+\).*/\1/p'
+  fi
+
+  if command -v lsof >/dev/null 2>&1; then
+    lsof -ti "tcp:${PORT}" -sTCP:LISTEN 2>/dev/null || true
+  fi
+
+  if command -v fuser >/dev/null 2>&1; then
+    fuser -n tcp "${PORT}" 2>/dev/null || true
+  fi
 }
 
 installed=false
@@ -58,7 +85,7 @@ fi
 if curl --max-time 2 -fsS "$HEALTH_URL" >/dev/null 2>&1; then
   health=ok
   if [[ "$backend" != "running" ]]; then
-    unmanaged_pid="$(find_server_pids | head -n 1 || true)"
+    unmanaged_pid="$({ find_server_pids; find_port_pids; } | head -n 1 || true)"
     if [[ -n "$unmanaged_pid" ]]; then
       backend=running-unmanaged
       frontend=running-unmanaged
@@ -80,9 +107,9 @@ detail="WORBI is not installed."
 if [[ "$installed" == "true" && "$running" == "false" ]]; then
   detail="WORBI is installed but stopped."
 elif [[ "$installed" == "true" && "$backend" == "running-unmanaged" ]]; then
-  detail="WORBI is running, but PID tracking is missing."
+  detail="WORBI is running. PID tracking was not available for this session."
 elif [[ "$installed" == "true" && "$backend" == "responding" ]]; then
-  detail="WORBI is responding, but no managed process could be identified."
+  detail="WORBI is responding, but the server process could not be identified."
 elif [[ "$installed" == "true" && "$running" == "true" ]]; then
   detail="WORBI is running."
 fi

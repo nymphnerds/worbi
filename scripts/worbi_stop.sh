@@ -6,6 +6,11 @@ LOGS_DIR="${INSTALL_DIR}/logs"
 PID_FILE="${LOGS_DIR}/worbi-server.pid"
 SERVER_DIR="${INSTALL_DIR}/server"
 HEALTH_URL="${WORBI_HEALTH_URL:-http://localhost:8082/api/health}"
+PORT="${WORBI_PORT:-8082}"
+
+if [[ "${HEALTH_URL}" =~ :([0-9]+)(/|$) ]]; then
+  PORT="${BASH_REMATCH[1]}"
+fi
 
 health_ok() {
   curl --max-time 2 -fsS "${HEALTH_URL}" >/dev/null 2>&1
@@ -21,13 +26,35 @@ find_server_pids() {
   server_dir_resolved="$(readlink -f "${SERVER_DIR}" 2>/dev/null || true)"
   [[ -n "${server_dir_resolved}" ]] || return 0
 
-  for pid in $(pgrep -f "node src/index.js" 2>/dev/null || true); do
+  local install_dir_resolved
+  install_dir_resolved="$(readlink -f "${INSTALL_DIR}" 2>/dev/null || true)"
+
+  while read -r pid args; do
+    [[ -n "${pid}" ]] || continue
     local cwd
     cwd="$(readlink -f "/proc/${pid}/cwd" 2>/dev/null || true)"
-    if [[ "${cwd}" == "${server_dir_resolved}" ]]; then
+    if [[ "${cwd}" == "${server_dir_resolved}" ]] ||
+      [[ "${args}" == *"${server_dir_resolved}/src/index.js"* ]] ||
+      [[ "${args}" == *"${install_dir_resolved}/server/src/index.js"* ]] ||
+      [[ "${args}" == *"node src/index.js"* && "${args}" == *"worbi"* ]]; then
       echo "${pid}"
     fi
-  done
+  done < <(ps -eo pid=,args= 2>/dev/null | awk '/node/ && /src\/index\.js/ {print $0}')
+}
+
+find_port_pids() {
+  if command -v ss >/dev/null 2>&1; then
+    ss -H -ltnp "sport = :${PORT}" 2>/dev/null \
+      | sed -n 's/.*pid=\([0-9]\+\).*/\1/p'
+  fi
+
+  if command -v lsof >/dev/null 2>&1; then
+    lsof -ti "tcp:${PORT}" -sTCP:LISTEN 2>/dev/null || true
+  fi
+
+  if command -v fuser >/dev/null 2>&1; then
+    fuser -n tcp "${PORT}" 2>/dev/null || true
+  fi
 }
 
 stop_pid() {
@@ -61,6 +88,11 @@ while IFS= read -r pid; do
   pids+=("${pid}")
 done < <(find_server_pids)
 
+while IFS= read -r pid; do
+  [[ -n "${pid}" ]] || continue
+  pids+=("${pid}")
+done < <(find_port_pids)
+
 unique_pids=()
 for pid in "${pids[@]}"; do
   seen=false
@@ -78,7 +110,7 @@ done
 if [[ "${#unique_pids[@]}" -eq 0 ]]; then
   rm -f "${PID_FILE}"
   if health_ok; then
-    echo "ERROR: WORBI is responding, but no managed server process was found." >&2
+    echo "ERROR: WORBI is responding on port ${PORT}, but no matching server process was found." >&2
     exit 1
   fi
   echo "WORBI is not running."
