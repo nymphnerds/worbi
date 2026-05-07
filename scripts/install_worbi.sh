@@ -33,5 +33,7 @@ chmod +x "${INSTALLER_DIR}/install.sh"
 
 "${INSTALLER_DIR}/install.sh"
 
-install -m 755 "${SCRIPT_DIR}/worbi_status.sh" "${HOME}/.local/bin/worbi-status"
-install -m 755 "${SCRIPT_DIR}/worbi_status.sh" "${HOME}/worbi/bin/worbi-status"
+for wrapper in start stop status open logs; do
+  install -m 755 "${SCRIPT_DIR}/worbi_${wrapper}.sh" "${HOME}/.local/bin/worbi-${wrapper}"
+  install -m 755 "${SCRIPT_DIR}/worbi_${wrapper}.sh" "${HOME}/worbi/bin/worbi-${wrapper}"
+done
