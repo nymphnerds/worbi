@@ -51,3 +51,8 @@ bash scripts/worbi_status.sh
 bash scripts/worbi_stop.sh
 bash scripts/worbi_logs.sh
 ```
+
+The Manager-facing scripts are intentionally authoritative. A small wrapper fix can be released by changing `scripts/`,
+bumping `nymph.json.version`, and pushing this repo; the package archive only needs rebuilding when WORBI app files change.
+`install_worbi.sh` writes the installed module version to `~/worbi/.nymph-module-version` so Manager update checks compare
+the Nymph module release, not only the bundled app package version.

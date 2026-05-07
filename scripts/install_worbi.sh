@@ -21,6 +21,16 @@ if archive.startswith("/") or ".." in archive.split("/"):
 print(archive)
 PY
 )"
+module_version="$(python3 - "${REPO_DIR}/nymph.json" <<'PY'
+import json
+import sys
+
+with open(sys.argv[1], "r", encoding="utf-8") as handle:
+    manifest = json.load(handle)
+
+print(str(manifest.get("version", "unknown")).strip() or "unknown")
+PY
+)"
 archive="${REPO_DIR}/${archive_rel}"
 if [[ ! -f "${archive}" ]]; then
   echo "ERROR: WORBI archive missing: ${archive}" >&2
@@ -32,6 +42,8 @@ cp "${SCRIPT_DIR}/installer_from_package.sh" "${INSTALLER_DIR}/install.sh"
 chmod +x "${INSTALLER_DIR}/install.sh"
 
 "${INSTALLER_DIR}/install.sh"
+
+printf '%s\n' "${module_version}" > "${HOME}/worbi/.nymph-module-version"
 
 for wrapper in start stop status open logs; do
   install -m 755 "${SCRIPT_DIR}/worbi_${wrapper}.sh" "${HOME}/.local/bin/worbi-${wrapper}"
