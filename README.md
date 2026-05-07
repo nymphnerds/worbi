@@ -7,6 +7,7 @@ This repo is intentionally simple:
 - `nymph.json` describes WORBI to the Manager.
 - `scripts/` contains stable Manager-facing wrapper scripts.
 - `packages/` contains the current packaged WORBI archive.
+- `docs/WORBI_GIT_MODULE_HOSTING_HANDOFF.md` explains the Rauty/NymphsCore integration plan.
 
 Manager v1 should treat WORBI as a launcher/status module:
 
@@ -17,6 +18,14 @@ Manager v1 should treat WORBI as a launcher/status module:
 - show status and logs
 
 WORBI itself owns the deeper app controls inside its browser UI.
+
+## Rauty Handoff
+
+The current integration handoff lives here:
+
+[docs/WORBI_GIT_MODULE_HOSTING_HANDOFF.md](docs/WORBI_GIT_MODULE_HOSTING_HANDOFF.md)
+
+This handoff explains how WORBI fits the NymphsCore Manager registry/module system and what the Manager needs from this repo.
 
 ## Local Runtime
 
