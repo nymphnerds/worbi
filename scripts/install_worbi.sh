@@ -6,7 +6,22 @@ REPO_DIR="$(cd "${SCRIPT_DIR}/.." && pwd)"
 INSTALLER_DIR="$(mktemp -d)"
 trap 'rm -rf "${INSTALLER_DIR}"' EXIT
 
-archive="${REPO_DIR}/packages/worbi-6.2.49.tar.gz"
+archive_rel="$(python3 - "${REPO_DIR}/nymph.json" <<'PY'
+import json
+import sys
+
+with open(sys.argv[1], "r", encoding="utf-8") as handle:
+    manifest = json.load(handle)
+
+archive = str(manifest.get("source", {}).get("archive", "")).strip()
+if not archive:
+    raise SystemExit("nymph.json source.archive is missing")
+if archive.startswith("/") or ".." in archive.split("/"):
+    raise SystemExit("nymph.json source.archive must be a safe relative path")
+print(archive)
+PY
+)"
+archive="${REPO_DIR}/${archive_rel}"
 if [[ ! -f "${archive}" ]]; then
   echo "ERROR: WORBI archive missing: ${archive}" >&2
   exit 1
