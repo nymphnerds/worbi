@@ -38,9 +38,8 @@ Default install root:
 Default URLs:
 
 ```text
-Frontend: http://localhost:5173
-Backend:  http://localhost:8082
-Health:   http://localhost:8082/api/health
+App:    http://localhost:8082
+Health: http://localhost:8082/api/health
 ```
 
 ## Scripts

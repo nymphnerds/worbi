@@ -17,3 +17,6 @@ cp "${SCRIPT_DIR}/installer_from_package.sh" "${INSTALLER_DIR}/install.sh"
 chmod +x "${INSTALLER_DIR}/install.sh"
 
 "${INSTALLER_DIR}/install.sh"
+
+install -m 755 "${SCRIPT_DIR}/worbi_status.sh" "${HOME}/.local/bin/worbi-status"
+install -m 755 "${SCRIPT_DIR}/worbi_status.sh" "${HOME}/worbi/bin/worbi-status"

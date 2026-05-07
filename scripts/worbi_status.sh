@@ -4,9 +4,9 @@ set -euo pipefail
 INSTALL_DIR="${WORBI_INSTALL_ROOT:-$HOME/worbi}"
 LOGS_DIR="${INSTALL_DIR}/logs"
 SERVER_PID_FILE="${LOGS_DIR}/worbi-server.pid"
-FRONTEND_URL="${WORBI_FRONTEND_URL:-http://localhost:5173}"
-BACKEND_URL="${WORBI_BACKEND_URL:-http://localhost:5173}"
-HEALTH_URL="${WORBI_HEALTH_URL:-http://localhost:5173/api/health}"
+FRONTEND_URL="${WORBI_FRONTEND_URL:-http://localhost:8082}"
+BACKEND_URL="${WORBI_BACKEND_URL:-http://localhost:8082}"
+HEALTH_URL="${WORBI_HEALTH_URL:-http://localhost:8082/api/health}"
 
 pid_running() {
   local pid_file="$1"
