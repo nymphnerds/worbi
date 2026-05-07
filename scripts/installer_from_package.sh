@@ -77,7 +77,7 @@ mkdir -p "$INSTALL_DIR/server/src/data/users"
 
 echo ""
 echo "Installing server dependencies..."
-(cd "$INSTALL_DIR/server" && npm install --loglevel=error) || true
+(cd "$INSTALL_DIR/server" && npm install --omit=dev --no-audit --no-fund --loglevel=error)
 
 mkdir -p "$HOME/.local/bin"
 cp "$INSTALL_DIR/bin/worbi-start" "$HOME/.local/bin/"
