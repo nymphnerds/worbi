@@ -4,10 +4,10 @@
   "name": "WORBI",
   "kind": "archive",
   "category": "tool",
-  "version": "6.2.18",
+  "version": "6.2.49",
   "description": "Local worldbuilding app managed by NymphsCore.",
   "source": {
-    "archive": "packages/worbi-6.2.18.tar.gz",
+    "archive": "packages/worbi-6.2.49.tar.gz",
     "format": "tar.gz"
   },
   "entrypoints": {
@@ -57,8 +57,8 @@
     "install_root": "~/worbi",
     "logs_dir": "~/worbi/logs",
     "frontend_url": "http://localhost:5173",
-    "backend_url": "http://localhost:8082",
-    "health_url": "http://localhost:8082/api/health"
+    "backend_url": "http://localhost:5173",
+    "health_url": "http://localhost:5173/api/health"
   },
   "update_policy": {
     "channel": "pinned"

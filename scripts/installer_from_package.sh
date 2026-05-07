@@ -44,7 +44,7 @@ TEMP_DIR="$(mktemp -d)"
 trap 'rm -rf "$TEMP_DIR"' EXIT
 tar -xzf "$ARCHIVE_PATH" -C "$TEMP_DIR"
 
-if [[ -f "$INSTALL_DIR/logs/worbi-client.pid" ]] || [[ -f "$INSTALL_DIR/logs/worbi-server.pid" ]]; then
+if [[ -f "$INSTALL_DIR/logs/worbi-server.pid" ]]; then
   echo "Stopping existing WORBI..."
   if command -v worbi-stop >/dev/null 2>&1; then
     worbi-stop 2>/dev/null || true
@@ -57,9 +57,8 @@ if [[ -d "$INSTALL_DIR" ]]; then
 fi
 
 mkdir -p "$INSTALL_DIR"
-rm -rf "$INSTALL_DIR/client" "$INSTALL_DIR/server" "$INSTALL_DIR/bin"
+rm -rf "$INSTALL_DIR/server" "$INSTALL_DIR/bin"
 
-cp -r "$TEMP_DIR/worbi/client" "$INSTALL_DIR/"
 cp -r "$TEMP_DIR/worbi/server" "$INSTALL_DIR/"
 cp -r "$TEMP_DIR/worbi/bin" "$INSTALL_DIR/"
 cp -f "$TEMP_DIR/worbi/package.json" "$INSTALL_DIR/" 2>/dev/null || true
@@ -80,17 +79,15 @@ echo ""
 echo "Installing server dependencies..."
 (cd "$INSTALL_DIR/server" && npm install --loglevel=error) || true
 
-echo "Installing client dependencies..."
-(cd "$INSTALL_DIR/client" && npm install --loglevel=error) || true
-
 mkdir -p "$HOME/.local/bin"
 cp "$INSTALL_DIR/bin/worbi-start" "$HOME/.local/bin/"
 cp "$INSTALL_DIR/bin/worbi-stop" "$HOME/.local/bin/"
 cp "$INSTALL_DIR/bin/worbi-status" "$HOME/.local/bin/"
-chmod +x "$HOME/.local/bin/worbi-start" "$HOME/.local/bin/worbi-stop" "$HOME/.local/bin/worbi-status"
+cp "$INSTALL_DIR/bin/worbi-open" "$HOME/.local/bin/" 2>/dev/null || true
+cp "$INSTALL_DIR/bin/worbi-logs" "$HOME/.local/bin/" 2>/dev/null || true
+chmod +x "$HOME/.local/bin/worbi-start" "$HOME/.local/bin/worbi-stop" "$HOME/.local/bin/worbi-status" "$HOME/.local/bin/worbi-open" "$HOME/.local/bin/worbi-logs" 2>/dev/null || true
 
 echo ""
 echo "WORBI installed successfully."
-echo "Frontend: http://localhost:5173"
-echo "Backend:  http://localhost:8082"
-echo "Logs:     $INSTALL_DIR/logs/"
+echo "App: http://localhost:5173"
+echo "Logs: $INSTALL_DIR/logs/"

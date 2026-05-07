@@ -6,7 +6,7 @@ REPO_DIR="$(cd "${SCRIPT_DIR}/.." && pwd)"
 INSTALLER_DIR="$(mktemp -d)"
 trap 'rm -rf "${INSTALLER_DIR}"' EXIT
 
-archive="${REPO_DIR}/packages/worbi-6.2.18.tar.gz"
+archive="${REPO_DIR}/packages/worbi-6.2.49.tar.gz"
 if [[ ! -f "${archive}" ]]; then
   echo "ERROR: WORBI archive missing: ${archive}" >&2
   exit 1

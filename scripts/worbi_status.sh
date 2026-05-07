@@ -4,10 +4,9 @@ set -euo pipefail
 INSTALL_DIR="${WORBI_INSTALL_ROOT:-$HOME/worbi}"
 LOGS_DIR="${INSTALL_DIR}/logs"
 SERVER_PID_FILE="${LOGS_DIR}/worbi-server.pid"
-CLIENT_PID_FILE="${LOGS_DIR}/worbi-client.pid"
 FRONTEND_URL="${WORBI_FRONTEND_URL:-http://localhost:5173}"
-BACKEND_URL="${WORBI_BACKEND_URL:-http://localhost:8082}"
-HEALTH_URL="${WORBI_HEALTH_URL:-http://localhost:8082/api/health}"
+BACKEND_URL="${WORBI_BACKEND_URL:-http://localhost:5173}"
+HEALTH_URL="${WORBI_HEALTH_URL:-http://localhost:5173/api/health}"
 
 pid_running() {
   local pid_file="$1"
@@ -34,9 +33,6 @@ fi
 
 if pid_running "$SERVER_PID_FILE"; then
   backend=running
-fi
-
-if pid_running "$CLIENT_PID_FILE"; then
   frontend=running
 fi
 
@@ -47,17 +43,15 @@ elif [[ "$backend" == "running" ]]; then
 fi
 
 running=false
-if [[ "$backend" == "running" || "$frontend" == "running" ]]; then
+if [[ "$backend" == "running" ]]; then
   running=true
 fi
 
 detail="WORBI is not installed."
 if [[ "$installed" == "true" && "$running" == "false" ]]; then
   detail="WORBI is installed but stopped."
-elif [[ "$installed" == "true" && "$backend" == "running" && "$frontend" == "running" ]]; then
+elif [[ "$installed" == "true" && "$running" == "true" ]]; then
   detail="WORBI is running."
-elif [[ "$installed" == "true" ]]; then
-  detail="WORBI is partially running."
 fi
 
 cat <<STATUS
