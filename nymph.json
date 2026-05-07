@@ -56,9 +56,9 @@
   "runtime": {
     "install_root": "~/worbi",
     "logs_dir": "~/worbi/logs",
-    "frontend_url": "http://localhost:5173",
-    "backend_url": "http://localhost:5173",
-    "health_url": "http://localhost:5173/api/health"
+    "frontend_url": "http://localhost:8082",
+    "backend_url": "http://localhost:8082",
+    "health_url": "http://localhost:8082/api/health"
   },
   "update_policy": {
     "channel": "pinned"

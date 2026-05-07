@@ -89,5 +89,5 @@ chmod +x "$HOME/.local/bin/worbi-start" "$HOME/.local/bin/worbi-stop" "$HOME/.lo
 
 echo ""
 echo "WORBI installed successfully."
-echo "App: http://localhost:5173"
+echo "App: http://localhost:8082"
 echo "Logs: $INSTALL_DIR/logs/"
