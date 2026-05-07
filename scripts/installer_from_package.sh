@@ -43,6 +43,8 @@ echo ""
 TEMP_DIR="$(mktemp -d)"
 trap 'rm -rf "$TEMP_DIR"' EXIT
 tar -xzf "$ARCHIVE_PATH" -C "$TEMP_DIR"
+PRESERVE_DIR="$TEMP_DIR/preserve"
+mkdir -p "$PRESERVE_DIR"
 
 if [[ -f "$INSTALL_DIR/logs/worbi-server.pid" ]]; then
   echo "Stopping existing WORBI..."
@@ -52,8 +54,10 @@ if [[ -f "$INSTALL_DIR/logs/worbi-server.pid" ]]; then
 fi
 
 if [[ -d "$INSTALL_DIR" ]]; then
-  echo "Existing installation found. Preserving user data..."
-  cp -r "$INSTALL_DIR" "${INSTALL_DIR}.backup.$(date +%Y%m%d%H%M%S)" 2>/dev/null || true
+  echo "Existing installation found. Preserving user data in temporary staging..."
+  [[ -f "$INSTALL_DIR/server/src/data/users.json" ]] && cp "$INSTALL_DIR/server/src/data/users.json" "$PRESERVE_DIR/" 2>/dev/null || true
+  [[ -d "$INSTALL_DIR/server/src/data/user-settings" ]] && cp -r "$INSTALL_DIR/server/src/data/user-settings" "$PRESERVE_DIR/" 2>/dev/null || true
+  [[ -d "$INSTALL_DIR/server/src/data/users" ]] && cp -r "$INSTALL_DIR/server/src/data/users" "$PRESERVE_DIR/" 2>/dev/null || true
 fi
 
 mkdir -p "$INSTALL_DIR"
@@ -67,17 +71,19 @@ cp -r "$TEMP_DIR/worbi/dist" "$INSTALL_DIR/"
 ln -sf "$INSTALL_DIR/dist" "$INSTALL_DIR/server/dist"
 cp -f "$TEMP_DIR/worbi/package.json" "$INSTALL_DIR/" 2>/dev/null || true
 
-latest_backup="$(find "$HOME" -maxdepth 1 -type d -name 'worbi.backup.*' | sort | tail -1)"
-if [[ -n "${latest_backup}" ]]; then
-  [[ -f "$latest_backup/server/src/data/users.json" ]] && cp "$latest_backup/server/src/data/users.json" "$INSTALL_DIR/server/src/data/" 2>/dev/null || true
-  [[ -d "$latest_backup/server/src/data/user-settings" ]] && cp -r "$latest_backup/server/src/data/user-settings" "$INSTALL_DIR/server/src/data/" 2>/dev/null || true
-  [[ -d "$latest_backup/server/src/data/users" ]] && cp -r "$latest_backup/server/src/data/users" "$INSTALL_DIR/server/src/data/" 2>/dev/null || true
-fi
-
 mkdir -p "$INSTALL_DIR/logs"
 mkdir -p "$INSTALL_DIR/server/src/data"
 mkdir -p "$INSTALL_DIR/server/src/data/user-settings"
 mkdir -p "$INSTALL_DIR/server/src/data/users"
+[[ -f "$PRESERVE_DIR/users.json" ]] && cp "$PRESERVE_DIR/users.json" "$INSTALL_DIR/server/src/data/" 2>/dev/null || true
+[[ -d "$PRESERVE_DIR/user-settings" ]] && cp -r "$PRESERVE_DIR/user-settings" "$INSTALL_DIR/server/src/data/" 2>/dev/null || true
+[[ -d "$PRESERVE_DIR/users" ]] && cp -r "$PRESERVE_DIR/users" "$INSTALL_DIR/server/src/data/" 2>/dev/null || true
+
+legacy_backup_count="$(find "$HOME" -maxdepth 1 -type d -name 'worbi.backup.*' | wc -l | tr -d ' ')"
+if [[ "${legacy_backup_count}" != "0" ]]; then
+  find "$HOME" -maxdepth 1 -type d -name 'worbi.backup.*' -exec rm -rf {} + 2>/dev/null || true
+  echo "Removed ${legacy_backup_count} old WORBI home backup folder(s)."
+fi
 
 echo ""
 echo "Installing server dependencies..."
