@@ -29,6 +29,8 @@ fi
 
 if [[ -f "$INSTALL_DIR/package.json" ]]; then
   version="$(node -e "const p=require(process.argv[1]); console.log(p.version || 'unknown')" "$INSTALL_DIR/package.json" 2>/dev/null || echo unknown)"
+elif [[ -f "$INSTALL_DIR/server/package.json" ]]; then
+  version="$(node -e "const p=require(process.argv[1]); console.log(p.version || 'unknown')" "$INSTALL_DIR/server/package.json" 2>/dev/null || echo unknown)"
 fi
 
 if pid_running "$SERVER_PID_FILE"; then
