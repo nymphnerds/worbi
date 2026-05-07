@@ -36,7 +36,7 @@ if pid_running "$SERVER_PID_FILE"; then
   frontend=running
 fi
 
-if curl -fsS "$HEALTH_URL" >/dev/null 2>&1; then
+if curl --max-time 2 -fsS "$HEALTH_URL" >/dev/null 2>&1; then
   health=ok
 elif [[ "$backend" == "running" ]]; then
   health=unreachable
