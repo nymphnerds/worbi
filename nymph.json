@@ -1,0 +1,47 @@
+{
+  "manifest_version": 1,
+  "id": "worbi",
+  "name": "WORBI",
+  "kind": "archive",
+  "category": "tool",
+  "version": "6.2.18",
+  "description": "Local worldbuilding app managed by NymphsCore.",
+  "source": {
+    "archive": "packages/worbi-6.2.18.tar.gz",
+    "format": "tar.gz"
+  },
+  "entrypoints": {
+    "install": "scripts/install_worbi.sh",
+    "status": "scripts/worbi_status.sh",
+    "start": "scripts/worbi_start.sh",
+    "stop": "scripts/worbi_stop.sh",
+    "open": "scripts/worbi_open.sh",
+    "logs": "scripts/worbi_logs.sh"
+  },
+  "capabilities": [
+    "install",
+    "status",
+    "start",
+    "stop",
+    "open",
+    "logs"
+  ],
+  "dependencies": [],
+  "ui": {
+    "show_tab_when_installed": true,
+    "tab_label": "WORBI",
+    "page_kind": "worbi",
+    "install_label": "Install WORBI",
+    "sort_order": 50
+  },
+  "runtime": {
+    "install_root": "~/worbi",
+    "logs_dir": "~/worbi/logs",
+    "frontend_url": "http://localhost:5173",
+    "backend_url": "http://localhost:8082",
+    "health_url": "http://localhost:8082/api/health"
+  },
+  "update_policy": {
+    "channel": "pinned"
+  }
+}
