@@ -26,7 +26,6 @@ pid_running() {
 find_server_pids() {
   local server_dir_resolved
   server_dir_resolved="$(readlink -f "${SERVER_DIR}" 2>/dev/null || true)"
-  [[ -n "${server_dir_resolved}" ]] || return 0
 
   local install_dir_resolved
   install_dir_resolved="$(readlink -f "${INSTALL_DIR}" 2>/dev/null || true)"
@@ -35,13 +34,14 @@ find_server_pids() {
     [[ -n "${pid}" ]] || continue
     local cwd
     cwd="$(readlink -f "/proc/${pid}/cwd" 2>/dev/null || true)"
-    if [[ "${cwd}" == "${server_dir_resolved}" ]] ||
-      [[ "${args}" == *"${server_dir_resolved}/src/index.js"* ]] ||
-      [[ "${args}" == *"${install_dir_resolved}/server/src/index.js"* ]] ||
-      [[ "${args}" == *"node src/index.js"* && "${args}" == *"worbi"* ]]; then
+    if [[ -n "${server_dir_resolved}" && "${cwd}" == "${server_dir_resolved}" ]] ||
+      [[ -n "${install_dir_resolved}" && "${cwd}" == "${install_dir_resolved}"* ]] ||
+      [[ -n "${server_dir_resolved}" && "${args}" == *"${server_dir_resolved}/src/index.js"* ]] ||
+      [[ -n "${install_dir_resolved}" && "${args}" == *"${install_dir_resolved}/server/src/index.js"* ]] ||
+      [[ "${args}" == *"node"* && "${args}" == *"src/index.js"* && "${args}" == *"worbi"* ]]; then
       echo "${pid}"
     fi
-  done < <(ps -eo pid=,args= 2>/dev/null | awk '/node/ && /src\/index\.js/ {print $0}')
+  done < <(ps -eo pid=,args= 2>/dev/null | awk '/node/ {print $0}')
 }
 
 find_port_pids() {
@@ -109,7 +109,7 @@ if [[ "$installed" == "true" && "$running" == "false" ]]; then
 elif [[ "$installed" == "true" && "$backend" == "running-unmanaged" ]]; then
   detail="WORBI is running. PID tracking was not available for this session."
 elif [[ "$installed" == "true" && "$backend" == "responding" ]]; then
-  detail="WORBI is responding, but the server process could not be identified."
+  detail="WORBI is responding. Process ownership was not identified, so stop will use the port fallback."
 elif [[ "$installed" == "true" && "$running" == "true" ]]; then
   detail="WORBI is running."
 fi

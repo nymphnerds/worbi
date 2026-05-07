@@ -24,7 +24,6 @@ pid_running() {
 find_server_pids() {
   local server_dir_resolved
   server_dir_resolved="$(readlink -f "${SERVER_DIR}" 2>/dev/null || true)"
-  [[ -n "${server_dir_resolved}" ]] || return 0
 
   local install_dir_resolved
   install_dir_resolved="$(readlink -f "${INSTALL_DIR}" 2>/dev/null || true)"
@@ -33,13 +32,14 @@ find_server_pids() {
     [[ -n "${pid}" ]] || continue
     local cwd
     cwd="$(readlink -f "/proc/${pid}/cwd" 2>/dev/null || true)"
-    if [[ "${cwd}" == "${server_dir_resolved}" ]] ||
-      [[ "${args}" == *"${server_dir_resolved}/src/index.js"* ]] ||
-      [[ "${args}" == *"${install_dir_resolved}/server/src/index.js"* ]] ||
-      [[ "${args}" == *"node src/index.js"* && "${args}" == *"worbi"* ]]; then
+    if [[ -n "${server_dir_resolved}" && "${cwd}" == "${server_dir_resolved}" ]] ||
+      [[ -n "${install_dir_resolved}" && "${cwd}" == "${install_dir_resolved}"* ]] ||
+      [[ -n "${server_dir_resolved}" && "${args}" == *"${server_dir_resolved}/src/index.js"* ]] ||
+      [[ -n "${install_dir_resolved}" && "${args}" == *"${install_dir_resolved}/server/src/index.js"* ]] ||
+      [[ "${args}" == *"node"* && "${args}" == *"src/index.js"* && "${args}" == *"worbi"* ]]; then
       echo "${pid}"
     fi
-  done < <(ps -eo pid=,args= 2>/dev/null | awk '/node/ && /src\/index\.js/ {print $0}')
+  done < <(ps -eo pid=,args= 2>/dev/null | awk '/node/ {print $0}')
 }
 
 find_port_pids() {
@@ -72,6 +72,18 @@ stop_pid() {
   done
 
   kill -KILL "${pid}" >/dev/null 2>&1 || true
+}
+
+stop_by_fallbacks() {
+  echo "No tracked WORBI PID found; trying port and command fallbacks..."
+
+  if command -v fuser >/dev/null 2>&1; then
+    fuser -k -n tcp "${PORT}" >/dev/null 2>&1 || true
+  fi
+
+  pkill -f "${INSTALL_DIR}/server/src/index.js" >/dev/null 2>&1 || true
+  pkill -f "${INSTALL_DIR}/server" >/dev/null 2>&1 || true
+  pkill -f "node .*src/index.js.*worbi" >/dev/null 2>&1 || true
 }
 
 pids=()
@@ -108,11 +120,22 @@ for pid in "${pids[@]}"; do
 done
 
 if [[ "${#unique_pids[@]}" -eq 0 ]]; then
-  rm -f "${PID_FILE}"
   if health_ok; then
-    echo "ERROR: WORBI is responding on port ${PORT}, but no matching server process was found." >&2
+    stop_by_fallbacks
+    rm -f "${PID_FILE}"
+
+    for _ in $(seq 1 20); do
+      if ! health_ok; then
+        echo "WORBI stopped."
+        exit 0
+      fi
+      sleep 0.25
+    done
+
+    echo "ERROR: WORBI still responds after fallback stop attempts." >&2
     exit 1
   fi
+  rm -f "${PID_FILE}"
   echo "WORBI is not running."
   exit 0
 fi

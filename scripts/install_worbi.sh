@@ -44,6 +44,7 @@ chmod +x "${INSTALLER_DIR}/install.sh"
 "${INSTALLER_DIR}/install.sh"
 
 printf '%s\n' "${module_version}" > "${HOME}/worbi/.nymph-module-version"
+echo "installed_module_version=${module_version}"
 
 for wrapper in start stop status open logs; do
   install -m 755 "${SCRIPT_DIR}/worbi_${wrapper}.sh" "${HOME}/.local/bin/worbi-${wrapper}"
