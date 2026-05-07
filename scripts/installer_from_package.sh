@@ -62,6 +62,9 @@ rm -rf "$INSTALL_DIR/server" "$INSTALL_DIR/bin" "$INSTALL_DIR/dist"
 cp -r "$TEMP_DIR/worbi/server" "$INSTALL_DIR/"
 cp -r "$TEMP_DIR/worbi/bin" "$INSTALL_DIR/"
 cp -r "$TEMP_DIR/worbi/dist" "$INSTALL_DIR/"
+# Server looks for dist at server/dist (relative to server/src/index.js)
+# Create symlink so server finds the frontend
+ln -sf "$INSTALL_DIR/dist" "$INSTALL_DIR/server/dist"
 cp -f "$TEMP_DIR/worbi/package.json" "$INSTALL_DIR/" 2>/dev/null || true
 
 latest_backup="$(find "$HOME" -maxdepth 1 -type d -name 'worbi.backup.*' | sort | tail -1)"
