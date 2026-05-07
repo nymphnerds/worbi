@@ -16,7 +16,8 @@
     "start": "scripts/worbi_start.sh",
     "stop": "scripts/worbi_stop.sh",
     "open": "scripts/worbi_open.sh",
-    "logs": "scripts/worbi_logs.sh"
+    "logs": "scripts/worbi_logs.sh",
+    "uninstall": "scripts/worbi_uninstall.sh"
   },
   "capabilities": [
     "install",
@@ -24,8 +25,26 @@
     "start",
     "stop",
     "open",
-    "logs"
+    "logs",
+    "uninstall"
   ],
+  "uninstall": {
+    "supports_purge": true,
+    "requires_confirmation": true,
+    "dry_run_arg": "--dry-run",
+    "confirm_arg": "--yes",
+    "purge_arg": "--purge",
+    "preserve_by_default": [
+      "data",
+      "projects",
+      "config",
+      "logs"
+    ],
+    "removes_by_default": [
+      "app runtime files",
+      "generated launch scripts"
+    ]
+  },
   "dependencies": [],
   "ui": {
     "show_tab_when_installed": true,
