@@ -4,10 +4,10 @@
   "name": "WORBI",
   "kind": "archive",
   "category": "tool",
-  "version": "6.2.58",
+  "version": "6.2.59",
   "description": "Local worldbuilding app managed by NymphsCore.",
   "source": {
-    "archive": "packages/worbi-6.2.58.tar.gz",
+    "archive": "packages/worbi-6.2.59.tar.gz",
     "format": "tar.gz"
   },
   "entrypoints": {
