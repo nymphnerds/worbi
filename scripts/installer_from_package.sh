@@ -43,8 +43,6 @@ echo ""
 TEMP_DIR="$(mktemp -d)"
 trap 'rm -rf "$TEMP_DIR"' EXIT
 tar -xzf "$ARCHIVE_PATH" -C "$TEMP_DIR"
-PRESERVE_DIR="$TEMP_DIR/preserve"
-mkdir -p "$PRESERVE_DIR"
 
 if [[ -f "$INSTALL_DIR/logs/worbi-server.pid" ]]; then
   echo "Stopping existing WORBI..."
@@ -54,40 +52,38 @@ if [[ -f "$INSTALL_DIR/logs/worbi-server.pid" ]]; then
 fi
 
 if [[ -d "$INSTALL_DIR" ]]; then
-  echo "Existing installation found. Preserving user data in temporary staging..."
-  [[ -f "$INSTALL_DIR/server/src/data/users.json" ]] && cp "$INSTALL_DIR/server/src/data/users.json" "$PRESERVE_DIR/" 2>/dev/null || true
-  [[ -d "$INSTALL_DIR/server/src/data/user-settings" ]] && cp -r "$INSTALL_DIR/server/src/data/user-settings" "$PRESERVE_DIR/" 2>/dev/null || true
-  [[ -d "$INSTALL_DIR/server/src/data/users" ]] && cp -r "$INSTALL_DIR/server/src/data/users" "$PRESERVE_DIR/" 2>/dev/null || true
+  echo "Existing installation found. Preserving user data..."
+  cp -r "$INSTALL_DIR" "${INSTALL_DIR}.backup.$(date +%Y%m%d%H%M%S)" 2>/dev/null || true
 fi
 
 mkdir -p "$INSTALL_DIR"
 rm -rf "$INSTALL_DIR/server" "$INSTALL_DIR/bin" "$INSTALL_DIR/dist"
 
+# Copy new dist (frontend) from archive
+cp -r "$TEMP_DIR/worbi/dist" "$INSTALL_DIR/"
+
 cp -r "$TEMP_DIR/worbi/server" "$INSTALL_DIR/"
 cp -r "$TEMP_DIR/worbi/bin" "$INSTALL_DIR/"
-cp -r "$TEMP_DIR/worbi/dist" "$INSTALL_DIR/"
-# Server looks for dist at server/dist (relative to server/src/index.js)
-# Create symlink so server finds the frontend
-ln -sf "$INSTALL_DIR/dist" "$INSTALL_DIR/server/dist"
 cp -f "$TEMP_DIR/worbi/package.json" "$INSTALL_DIR/" 2>/dev/null || true
+
+# Create symlink: server/dist -> dist (required for Express to find frontend)
+ln -sf "$INSTALL_DIR/dist" "$INSTALL_DIR/server/dist"
+
+latest_backup="$(find "$HOME" -maxdepth 1 -type d -name 'worbi.backup.*' | sort | tail -1)"
+if [[ -n "${latest_backup}" ]]; then
+  [[ -f "$latest_backup/server/src/data/users.json" ]] && cp "$latest_backup/server/src/data/users.json" "$INSTALL_DIR/server/src/data/" 2>/dev/null || true
+  [[ -d "$latest_backup/server/src/data/user-settings" ]] && cp -r "$latest_backup/server/src/data/user-settings" "$INSTALL_DIR/server/src/data/" 2>/dev/null || true
+  [[ -d "$latest_backup/server/src/data/users" ]] && cp -r "$latest_backup/server/src/data/users" "$INSTALL_DIR/server/src/data/" 2>/dev/null || true
+fi
 
 mkdir -p "$INSTALL_DIR/logs"
 mkdir -p "$INSTALL_DIR/server/src/data"
 mkdir -p "$INSTALL_DIR/server/src/data/user-settings"
 mkdir -p "$INSTALL_DIR/server/src/data/users"
-[[ -f "$PRESERVE_DIR/users.json" ]] && cp "$PRESERVE_DIR/users.json" "$INSTALL_DIR/server/src/data/" 2>/dev/null || true
-[[ -d "$PRESERVE_DIR/user-settings" ]] && cp -r "$PRESERVE_DIR/user-settings" "$INSTALL_DIR/server/src/data/" 2>/dev/null || true
-[[ -d "$PRESERVE_DIR/users" ]] && cp -r "$PRESERVE_DIR/users" "$INSTALL_DIR/server/src/data/" 2>/dev/null || true
-
-legacy_backup_count="$(find "$HOME" -maxdepth 1 -type d -name 'worbi.backup.*' | wc -l | tr -d ' ')"
-if [[ "${legacy_backup_count}" != "0" ]]; then
-  find "$HOME" -maxdepth 1 -type d -name 'worbi.backup.*' -exec rm -rf {} + 2>/dev/null || true
-  echo "Removed ${legacy_backup_count} old WORBI home backup folder(s)."
-fi
 
 echo ""
 echo "Installing server dependencies..."
-(cd "$INSTALL_DIR/server" && npm install --omit=dev --no-audit --no-fund --loglevel=error)
+(cd "$INSTALL_DIR/server" && npm install --loglevel=error) || true
 
 mkdir -p "$HOME/.local/bin"
 cp "$INSTALL_DIR/bin/worbi-start" "$HOME/.local/bin/"
@@ -97,7 +93,12 @@ cp "$INSTALL_DIR/bin/worbi-open" "$HOME/.local/bin/" 2>/dev/null || true
 cp "$INSTALL_DIR/bin/worbi-logs" "$HOME/.local/bin/" 2>/dev/null || true
 chmod +x "$HOME/.local/bin/worbi-start" "$HOME/.local/bin/worbi-stop" "$HOME/.local/bin/worbi-status" "$HOME/.local/bin/worbi-open" "$HOME/.local/bin/worbi-logs" 2>/dev/null || true
 
+# --- Write version marker (Nymph Plugin V1 contract) ---
+WORBI_VERSION="6.2.49"
+echo -n "${WORBI_VERSION}" > "${INSTALL_DIR}/.nymph-module-version"
+
 echo ""
 echo "WORBI installed successfully."
 echo "App: http://localhost:8082"
 echo "Logs: $INSTALL_DIR/logs/"
+echo "installed_module_version=${WORBI_VERSION}"
