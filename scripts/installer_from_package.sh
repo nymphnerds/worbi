@@ -43,6 +43,8 @@ echo ""
 TEMP_DIR="$(mktemp -d)"
 trap 'rm -rf "$TEMP_DIR"' EXIT
 tar -xzf "$ARCHIVE_PATH" -C "$TEMP_DIR"
+STAGE_DIR="$TEMP_DIR/worbi-stage"
+PRESERVE_DIR="$TEMP_DIR/preserve"
 
 if [[ -f "$INSTALL_DIR/logs/worbi-server.pid" ]]; then
   echo "Stopping existing WORBI..."
@@ -52,38 +54,56 @@ if [[ -f "$INSTALL_DIR/logs/worbi-server.pid" ]]; then
 fi
 
 if [[ -d "$INSTALL_DIR" ]]; then
-  echo "Existing installation found. Preserving user data..."
-  cp -r "$INSTALL_DIR" "${INSTALL_DIR}.backup.$(date +%Y%m%d%H%M%S)" 2>/dev/null || true
+  if [[ -f "$INSTALL_DIR/.nymph-module-version" ]]; then
+    echo "Existing installation found. Preserving declared user data for in-place refresh..."
+    mkdir -p "$PRESERVE_DIR/server/src/data"
+    [[ -f "$INSTALL_DIR/server/src/data/users.json" ]] && cp "$INSTALL_DIR/server/src/data/users.json" "$PRESERVE_DIR/server/src/data/" 2>/dev/null || true
+    [[ -d "$INSTALL_DIR/server/src/data/user-settings" ]] && cp -r "$INSTALL_DIR/server/src/data/user-settings" "$PRESERVE_DIR/server/src/data/" 2>/dev/null || true
+    [[ -d "$INSTALL_DIR/server/src/data/users" ]] && cp -r "$INSTALL_DIR/server/src/data/users" "$PRESERVE_DIR/server/src/data/" 2>/dev/null || true
+  else
+    echo "Partial WORBI install found. Cleaning runtime folder without creating backups..."
+  fi
 fi
 
-mkdir -p "$INSTALL_DIR"
-rm -rf "$INSTALL_DIR/server" "$INSTALL_DIR/bin" "$INSTALL_DIR/dist"
+mkdir -p "$STAGE_DIR"
 
 # Copy new dist (frontend) from archive
-cp -r "$TEMP_DIR/worbi/dist" "$INSTALL_DIR/"
+cp -r "$TEMP_DIR/worbi/dist" "$STAGE_DIR/"
 
-cp -r "$TEMP_DIR/worbi/server" "$INSTALL_DIR/"
-cp -r "$TEMP_DIR/worbi/bin" "$INSTALL_DIR/"
-cp -f "$TEMP_DIR/worbi/package.json" "$INSTALL_DIR/" 2>/dev/null || true
+cp -r "$TEMP_DIR/worbi/server" "$STAGE_DIR/"
+cp -r "$TEMP_DIR/worbi/bin" "$STAGE_DIR/"
+cp -f "$TEMP_DIR/worbi/package.json" "$STAGE_DIR/" 2>/dev/null || true
 
 # Create symlink: server/dist -> dist (required for Express to find frontend)
-ln -sf "$INSTALL_DIR/dist" "$INSTALL_DIR/server/dist"
+ln -sf "$INSTALL_DIR/dist" "$STAGE_DIR/server/dist"
 
-latest_backup="$(find "$HOME" -maxdepth 1 -type d -name 'worbi.backup.*' | sort | tail -1)"
-if [[ -n "${latest_backup}" ]]; then
-  [[ -f "$latest_backup/server/src/data/users.json" ]] && cp "$latest_backup/server/src/data/users.json" "$INSTALL_DIR/server/src/data/" 2>/dev/null || true
-  [[ -d "$latest_backup/server/src/data/user-settings" ]] && cp -r "$latest_backup/server/src/data/user-settings" "$INSTALL_DIR/server/src/data/" 2>/dev/null || true
-  [[ -d "$latest_backup/server/src/data/users" ]] && cp -r "$latest_backup/server/src/data/users" "$INSTALL_DIR/server/src/data/" 2>/dev/null || true
+if [[ -d "${PRESERVE_DIR}/server/src/data" ]]; then
+  [[ -f "$PRESERVE_DIR/server/src/data/users.json" ]] && cp "$PRESERVE_DIR/server/src/data/users.json" "$STAGE_DIR/server/src/data/" 2>/dev/null || true
+  [[ -d "$PRESERVE_DIR/server/src/data/user-settings" ]] && cp -r "$PRESERVE_DIR/server/src/data/user-settings" "$STAGE_DIR/server/src/data/" 2>/dev/null || true
+  [[ -d "$PRESERVE_DIR/server/src/data/users" ]] && cp -r "$PRESERVE_DIR/server/src/data/users" "$STAGE_DIR/server/src/data/" 2>/dev/null || true
 fi
 
-mkdir -p "$INSTALL_DIR/logs"
-mkdir -p "$INSTALL_DIR/server/src/data"
-mkdir -p "$INSTALL_DIR/server/src/data/user-settings"
-mkdir -p "$INSTALL_DIR/server/src/data/users"
+mkdir -p "$STAGE_DIR/logs"
+mkdir -p "$STAGE_DIR/server/src/data"
+mkdir -p "$STAGE_DIR/server/src/data/user-settings"
+mkdir -p "$STAGE_DIR/server/src/data/users"
 
 echo ""
-echo "Installing server dependencies..."
-(cd "$INSTALL_DIR/server" && npm install --loglevel=error) || true
+NPM_TIMEOUT_SECONDS="${NYMPHS_WORBI_NPM_TIMEOUT_SECONDS:-240}"
+echo "Installing production server dependencies (timeout: ${NPM_TIMEOUT_SECONDS}s)..."
+if command -v timeout >/dev/null 2>&1; then
+  (cd "$STAGE_DIR/server" && timeout "${NPM_TIMEOUT_SECONDS}s" npm install --omit=dev --no-audit --no-fund --loglevel=warn)
+else
+  (cd "$STAGE_DIR/server" && npm install --omit=dev --no-audit --no-fund --loglevel=warn)
+fi
+
+rm -rf "$INSTALL_DIR/server" "$INSTALL_DIR/bin" "$INSTALL_DIR/dist" "$INSTALL_DIR/package.json" "$INSTALL_DIR/.nymph-module-version"
+mkdir -p "$INSTALL_DIR"
+cp -r "$STAGE_DIR/dist" "$INSTALL_DIR/"
+cp -r "$STAGE_DIR/server" "$INSTALL_DIR/"
+cp -r "$STAGE_DIR/bin" "$INSTALL_DIR/"
+cp -f "$STAGE_DIR/package.json" "$INSTALL_DIR/" 2>/dev/null || true
+mkdir -p "$INSTALL_DIR/logs"
 
 mkdir -p "$HOME/.local/bin"
 cp "$INSTALL_DIR/bin/worbi-start" "$HOME/.local/bin/"
@@ -93,12 +113,7 @@ cp "$INSTALL_DIR/bin/worbi-open" "$HOME/.local/bin/" 2>/dev/null || true
 cp "$INSTALL_DIR/bin/worbi-logs" "$HOME/.local/bin/" 2>/dev/null || true
 chmod +x "$HOME/.local/bin/worbi-start" "$HOME/.local/bin/worbi-stop" "$HOME/.local/bin/worbi-status" "$HOME/.local/bin/worbi-open" "$HOME/.local/bin/worbi-logs" 2>/dev/null || true
 
-# --- Write version marker (Nymph Plugin V1 contract) ---
-WORBI_VERSION="6.2.49"
-echo -n "${WORBI_VERSION}" > "${INSTALL_DIR}/.nymph-module-version"
-
 echo ""
 echo "WORBI installed successfully."
 echo "App: http://localhost:8082"
 echo "Logs: $INSTALL_DIR/logs/"
-echo "installed_module_version=${WORBI_VERSION}"
