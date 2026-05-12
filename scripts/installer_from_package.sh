@@ -26,7 +26,7 @@ else
   echo "Node.js installed: $(node --version)"
 fi
 
-INSTALL_DIR="$HOME/worbi"
+INSTALL_DIR="${WORBI_INSTALL_DIR:-$HOME/worbi}"
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 
 if ls "$SCRIPT_DIR"/worbi-*.tar.gz >/dev/null 2>&1; then

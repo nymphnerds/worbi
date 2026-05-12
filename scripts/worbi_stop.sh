@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-INSTALL_DIR="${WORBI_INSTALL_ROOT:-$HOME/worbi}"
+INSTALL_DIR="${WORBI_INSTALL_ROOT:-${WORBI_INSTALL_DIR:-$HOME/worbi}}"
 LOGS_DIR="${INSTALL_DIR}/logs"
 PID_FILE="${LOGS_DIR}/worbi-server.pid"
 SERVER_DIR="${INSTALL_DIR}/server"

@@ -37,16 +37,18 @@ if [[ ! -f "${archive}" ]]; then
   exit 1
 fi
 
+INSTALL_DIR="${WORBI_INSTALL_DIR:-${HOME}/worbi}"
+
 cp "${archive}" "${INSTALLER_DIR}/"
 cp "${SCRIPT_DIR}/installer_from_package.sh" "${INSTALLER_DIR}/install.sh"
 chmod +x "${INSTALLER_DIR}/install.sh"
 
-"${INSTALLER_DIR}/install.sh"
+WORBI_INSTALL_DIR="${INSTALL_DIR}" "${INSTALLER_DIR}/install.sh"
 
-printf '%s\n' "${module_version}" > "${HOME}/worbi/.nymph-module-version"
+printf '%s\n' "${module_version}" > "${INSTALL_DIR}/.nymph-module-version"
 echo "installed_module_version=${module_version}"
 
 for wrapper in start stop status open logs; do
   install -m 755 "${SCRIPT_DIR}/worbi_${wrapper}.sh" "${HOME}/.local/bin/worbi-${wrapper}"
-  install -m 755 "${SCRIPT_DIR}/worbi_${wrapper}.sh" "${HOME}/worbi/bin/worbi-${wrapper}"
+  install -m 755 "${SCRIPT_DIR}/worbi_${wrapper}.sh" "${INSTALL_DIR}/bin/worbi-${wrapper}"
 done
