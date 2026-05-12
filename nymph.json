@@ -5,7 +5,30 @@
   "kind": "archive",
   "category": "tool",
   "version": "6.3.0",
-  "description": "Local worldbuilding app managed by NymphsCore.",
+  "description": "Local-first worldbuilding workspace for lore, characters, locations, timelines, notes, and project planning.",
+  "overview": {
+    "body": "WORBI is a browser-based worldbuilding tool packaged as a Nymph module. It is designed for writers, game developers, solo creators, and teams who need a local project bible for fictional worlds and production notes.",
+    "works_with": [
+      "Standalone browser workflow",
+      "NymphsCore Manager",
+      "Game writing and planning workflows",
+      "Blender/Unity/Unreal projects as external reference material"
+    ],
+    "requirements": [
+      "NymphsCore base WSL runtime",
+      "Local WebView2 or browser access to the WORBI web app"
+    ],
+    "compatibility": [
+      "Runs locally from the managed NymphsCore WSL distro",
+      "Keeps WORBI project data under the module data folders during normal uninstall"
+    ],
+    "links": [
+      {
+        "label": "WORBI module source",
+        "url": "https://github.com/nymphnerds/worbi"
+      }
+    ]
+  },
   "source": {
     "archive": "packages/worbi-6.3.0.tar.gz",
     "format": "tar.gz"
@@ -47,6 +70,13 @@
   },
   "dependencies": [],
   "ui": {
+    "manager_ui": {
+      "type": "local_url",
+      "title": "WORBI",
+      "url": "http://localhost:8082",
+      "requires_running": true,
+      "start_action": "start"
+    },
     "show_tab_when_installed": true,
     "tab_label": "WORBI",
     "page_kind": "worbi",
