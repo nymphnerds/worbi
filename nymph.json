@@ -16,6 +16,7 @@
     ],
     "requirements": [
       "NymphsCore base WSL runtime",
+      "Nymphs Brain local AI stack",
       "Local WebView2 or browser access to the WORBI web app"
     ],
     "compatibility": [
@@ -77,6 +78,32 @@
       "requires_running": true,
       "start_action": "start"
     },
+    "manager_actions": [
+      {
+        "id": "start",
+        "label": "Start",
+        "entrypoint": "start",
+        "result": "open_in_manager"
+      },
+      {
+        "id": "stop",
+        "label": "Stop",
+        "entrypoint": "stop",
+        "result": "show_output"
+      },
+      {
+        "id": "browser",
+        "label": "Browser",
+        "entrypoint": "start",
+        "result": "open_external_browser"
+      },
+      {
+        "id": "logs",
+        "label": "Logs",
+        "entrypoint": "logs",
+        "result": "open_notepad"
+      }
+    ],
     "show_tab_when_installed": true,
     "tab_label": "WORBI",
     "page_kind": "worbi",
