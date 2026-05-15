@@ -4,7 +4,7 @@
   "name": "WORBI",
   "kind": "archive",
   "category": "tool",
-  "version": "6.3.18",
+  "version": "6.3.19",
   "description": "Local-first worldbuilding workspace for lore, characters, locations, timelines, notes, and project planning.",
   "overview": {
     "body": "WORBI is a browser-based worldbuilding tool packaged as a Nymph module. It is designed for writers, game developers, solo creators, and teams who need a local project bible for fictional worlds and production notes.",
@@ -41,7 +41,8 @@
     "stop": "scripts/worbi_stop.sh",
     "open": "scripts/worbi_open.sh",
     "logs": "scripts/worbi_logs.sh",
-    "uninstall": "scripts/worbi_uninstall.sh"
+    "uninstall": "scripts/worbi_uninstall.sh",
+    "open_data": "scripts/worbi_open_data.sh"
   },
   "capabilities": [
     "install",
@@ -79,6 +80,12 @@
       "start_action": "start"
     },
     "manager_actions": [
+      {
+        "id": "open_data",
+        "label": "Open Data",
+        "entrypoint": "open_data",
+        "result": "open_directory"
+      },
       {
         "id": "start",
         "label": "Start",
