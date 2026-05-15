@@ -48,7 +48,11 @@ WORBI_INSTALL_DIR="${INSTALL_DIR}" "${INSTALLER_DIR}/install.sh"
 printf '%s\n' "${module_version}" > "${INSTALL_DIR}/.nymph-module-version"
 echo "installed_module_version=${module_version}"
 
-for wrapper in start stop status open logs; do
+install -m 644 "${REPO_DIR}/nymph.json" "${INSTALL_DIR}/nymph.json"
+mkdir -p "${INSTALL_DIR}/scripts"
+install -m 755 "${SCRIPT_DIR}"/worbi_*.sh "${INSTALL_DIR}/scripts/"
+
+for wrapper in start stop status open logs open_data; do
   install -m 755 "${SCRIPT_DIR}/worbi_${wrapper}.sh" "${HOME}/.local/bin/worbi-${wrapper}"
   install -m 755 "${SCRIPT_DIR}/worbi_${wrapper}.sh" "${INSTALL_DIR}/bin/worbi-${wrapper}"
 done
