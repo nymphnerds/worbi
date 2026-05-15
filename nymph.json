@@ -4,7 +4,7 @@
   "name": "WORBI",
   "kind": "archive",
   "category": "tool",
-  "version": "6.3.20",
+  "version": "6.3.21",
   "description": "Local-first worldbuilding workspace for lore, characters, locations, timelines, notes, and project planning.",
   "overview": {
     "body": "WORBI is a browser-based worldbuilding tool packaged as a Nymph module. It is designed for writers, game developers, solo creators, and teams who need a local project bible for fictional worlds and production notes.",
@@ -60,6 +60,7 @@
     "dry_run_arg": "--dry-run",
     "confirm_arg": "--yes",
     "purge_arg": "--purge",
+    "data_only_arg": "--data-only",
     "preserve_by_default": [
       "data",
       "projects",

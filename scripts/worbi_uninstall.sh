@@ -3,21 +3,24 @@ set -euo pipefail
 
 INSTALL_ROOT="${WORBI_INSTALL_ROOT:-$HOME/worbi}"
 PURGE=0
+DATA_ONLY=0
 DRY_RUN=0
 YES=0
 
 while [[ $# -gt 0 ]]; do
   case "$1" in
     --purge) PURGE=1; shift ;;
+    --data-only) DATA_ONLY=1; shift ;;
     --dry-run) DRY_RUN=1; shift ;;
     --yes) YES=1; shift ;;
     -h|--help)
       cat <<'EOF'
-Usage: worbi_uninstall.sh [--dry-run] [--yes] [--purge]
+Usage: worbi_uninstall.sh [--dry-run] [--yes] [--purge] [--data-only]
 
 Default uninstall removes WORBI runtime files but preserves data, projects,
 config, and logs when those folders exist.
 --purge removes the whole install root.
+--data-only deletes WORBI data, projects, config, and logs while keeping the runtime.
 EOF
       exit 0
       ;;
@@ -28,9 +31,21 @@ EOF
   esac
 done
 
+if [[ "${PURGE}" -eq 1 && "${DATA_ONLY}" -eq 1 ]]; then
+  echo "Choose only one of --purge or --data-only." >&2
+  exit 2
+fi
+
 echo "WORBI uninstall plan"
 echo "install_root=${INSTALL_ROOT}"
-if [[ "${PURGE}" -eq 1 ]]; then
+if [[ "${DATA_ONLY}" -eq 1 ]]; then
+  echo "mode=data-only"
+  echo "delete=${INSTALL_ROOT}/data"
+  echo "delete=${INSTALL_ROOT}/projects"
+  echo "delete=${INSTALL_ROOT}/config"
+  echo "delete=${INSTALL_ROOT}/logs"
+  echo "preserve=${INSTALL_ROOT}"
+elif [[ "${PURGE}" -eq 1 ]]; then
   echo "mode=purge"
   echo "delete=${INSTALL_ROOT}"
 else
@@ -59,7 +74,13 @@ if [[ ! -d "${INSTALL_ROOT}" ]]; then
   exit 0
 fi
 
-if [[ "${PURGE}" -eq 1 ]]; then
+if [[ "${DATA_ONLY}" -eq 1 ]]; then
+  rm -rf \
+    "${INSTALL_ROOT}/data" \
+    "${INSTALL_ROOT}/projects" \
+    "${INSTALL_ROOT}/config" \
+    "${INSTALL_ROOT}/logs"
+elif [[ "${PURGE}" -eq 1 ]]; then
   rm -rf "${INSTALL_ROOT}"
 else
   find "${INSTALL_ROOT}" -mindepth 1 \
@@ -70,4 +91,8 @@ else
     -exec rm -rf {} +
 fi
 
-echo "WORBI uninstalled."
+if [[ "${DATA_ONLY}" -eq 1 ]]; then
+  echo "WORBI data deleted."
+else
+  echo "WORBI uninstalled."
+fi
