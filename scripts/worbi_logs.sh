@@ -3,8 +3,13 @@ set -euo pipefail
 
 INSTALL_DIR="${WORBI_INSTALL_ROOT:-${WORBI_INSTALL_DIR:-$HOME/worbi}}"
 LOGS_DIR="${INSTALL_DIR}/logs"
+LAST_LOG="${LOGS_DIR}/worbi-server.log"
+
+mkdir -p "${LOGS_DIR}"
+touch "${LAST_LOG}"
 
 echo "logs_dir=${LOGS_DIR}"
+echo "last_log=${LAST_LOG}"
 echo "server_log=${LOGS_DIR}/worbi-server.log"
 echo "client_log=${LOGS_DIR}/worbi-client.log"
 
