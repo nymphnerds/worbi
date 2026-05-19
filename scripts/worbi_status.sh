@@ -66,7 +66,7 @@ data_present=false
 version=not-installed
 backend=stopped
 frontend=stopped
-health=unknown
+health=unavailable
 
 if [[ -f "$MARKER_FILE" ]]; then
   installed=true
@@ -84,20 +84,20 @@ if pid_running "$SERVER_PID_FILE"; then
   frontend=running
 fi
 
-if curl --max-time 2 -fsS "$HEALTH_URL" >/dev/null 2>&1; then
-  health=ok
-  if [[ "$backend" != "running" ]]; then
-    unmanaged_pid="$({ find_server_pids; find_port_pids; } | head -n 1 || true)"
-    if [[ -n "$unmanaged_pid" ]]; then
-      backend=running-unmanaged
-      frontend=running-unmanaged
-    else
-      backend=responding
-      frontend=responding
-    fi
+if [[ "$installed" == "true" && "$backend" != "running" ]]; then
+  unmanaged_pid="$({ find_server_pids; find_port_pids; } | head -n 1 || true)"
+  if [[ -n "$unmanaged_pid" ]]; then
+    backend=running-unmanaged
+    frontend=running-unmanaged
   fi
-elif [[ "$backend" == "running" ]]; then
-  health=unreachable
+fi
+
+if [[ "$backend" == "running" || "$backend" == "running-unmanaged" ]]; then
+  if curl --max-time 2 -fsS "$HEALTH_URL" >/dev/null 2>&1; then
+    health=ok
+  else
+    health=unreachable
+  fi
 fi
 
 running=false
@@ -109,6 +109,7 @@ state=available
 detail="WORBI is not installed."
 if [[ "$installed" == "true" && "$running" == "false" ]]; then
   state=installed
+  health=ok
   detail="WORBI is installed but stopped."
 elif [[ "$installed" == "true" && "$backend" == "running-unmanaged" ]]; then
   state=running
