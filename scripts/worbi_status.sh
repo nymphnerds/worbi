@@ -11,6 +11,8 @@ HEALTH_URL="${WORBI_HEALTH_URL:-http://localhost:8082/api/health}"
 SERVER_DIR="${INSTALL_DIR}/server"
 PORT="${WORBI_PORT:-8082}"
 
+export PATH="${HOME}/.local/bin:${PATH}"
+
 if [[ "${HEALTH_URL}" =~ :([0-9]+)(/|$) ]]; then
   PORT="${BASH_REMATCH[1]}"
 fi
@@ -67,6 +69,11 @@ version=not-installed
 backend=stopped
 frontend=stopped
 health=unavailable
+node_ready=false
+
+if command -v node >/dev/null 2>&1; then
+  node_ready=true
+fi
 
 if [[ -f "$MARKER_FILE" ]]; then
   installed=true
@@ -107,7 +114,11 @@ fi
 
 state=available
 detail="WORBI is not installed."
-if [[ "$installed" == "true" && "$running" == "false" ]]; then
+if [[ "$installed" == "true" && "$node_ready" == "false" ]]; then
+  state=needs_attention
+  health=degraded
+  detail="WORBI is installed, but Node.js is missing. Start will attempt to install it into ~/.local."
+elif [[ "$installed" == "true" && "$running" == "false" ]]; then
   state=installed
   health=ok
   detail="WORBI is installed but stopped."
@@ -131,6 +142,7 @@ installed=${installed}
 runtime_present=${runtime_present}
 data_present=${data_present}
 version=${version}
+node_ready=${node_ready}
 running=${running}
 state=${state}
 backend=${backend}

@@ -9,6 +9,9 @@ HEALTH_URL="${WORBI_HEALTH_URL:-http://localhost:8082/api/health}"
 SERVER_DIR="${INSTALL_DIR}/server"
 SERVER_ENTRYPOINT="${SERVER_DIR}/src/index.js"
 SERVER_LOG="${LOGS_DIR}/worbi-server.log"
+NODE_VERSION="${WORBI_NODE_VERSION:-18.20.8}"
+
+export PATH="${HOME}/.local/bin:${PATH}"
 
 mkdir -p "${LOGS_DIR}"
 
@@ -24,6 +27,42 @@ pid_running() {
 
 health_ok() {
   curl --max-time 2 -fsS "${HEALTH_URL}" >/dev/null 2>&1
+}
+
+install_node_runtime() {
+  local arch node_arch node_tar node_url
+  if command -v node >/dev/null 2>&1; then
+    return 0
+  fi
+
+  echo "Node.js not found. Installing Node.js ${NODE_VERSION} to ${HOME}/.local..."
+  arch="$(uname -m)"
+  case "${arch}" in
+    x86_64) node_arch="x64" ;;
+    aarch64|arm64) node_arch="arm64" ;;
+    *)
+      echo "ERROR: Unsupported Node.js architecture: ${arch}" >&2
+      return 1
+      ;;
+  esac
+
+  if ! command -v curl >/dev/null 2>&1; then
+    echo "ERROR: curl is required to install Node.js for WORBI." >&2
+    return 1
+  fi
+
+  node_tar="node-v${NODE_VERSION}-linux-${node_arch}.tar.xz"
+  node_url="https://nodejs.org/dist/v${NODE_VERSION}/${node_tar}"
+  mkdir -p "${HOME}/.local"
+  curl -fsSL "${node_url}" -o "/tmp/${node_tar}"
+  tar -xJf "/tmp/${node_tar}" -C "${HOME}/.local" --strip-components=1
+  rm -f "/tmp/${node_tar}"
+
+  if ! command -v node >/dev/null 2>&1; then
+    echo "ERROR: Node.js install completed, but node is still not on PATH." >&2
+    return 1
+  fi
+  echo "Node.js ready: $(node --version)"
 }
 
 find_server_pids() {
@@ -62,6 +101,7 @@ if health_ok; then
 fi
 
 echo "Starting WORBI server..."
+install_node_runtime
 (
   cd "${SERVER_DIR}"
   if command -v setsid >/dev/null 2>&1; then
