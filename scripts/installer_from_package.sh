@@ -6,24 +6,29 @@ echo "  WORBI Installer"
 echo "============================================="
 echo ""
 
-if command -v node >/dev/null 2>&1; then
-  echo "Node.js found: $(node --version)"
-else
-  echo "Node.js not found. Installing to ~/.local (no sudo)..."
+NODE_VERSION="${WORBI_NODE_VERSION:-18.20.8}"
+export PATH="$HOME/.local/bin:$PATH"
+
+install_local_node() {
+  echo "Installing Node.js ${NODE_VERSION} to ~/.local (no sudo)..."
   ARCH="$(uname -m)"
   case "$ARCH" in
     x86_64) NODE_ARCH="x64" ;;
     aarch64|arm64) NODE_ARCH="arm64" ;;
     *) echo "ERROR: Unsupported architecture: $ARCH" >&2; exit 1 ;;
   esac
-  NODE_VERSION="18.20.8"
   NODE_TAR="node-v${NODE_VERSION}-linux-${NODE_ARCH}.tar.xz"
   curl -fsSL "https://nodejs.org/dist/v${NODE_VERSION}/${NODE_TAR}" -o "/tmp/${NODE_TAR}"
   mkdir -p "$HOME/.local"
   tar -xJf "/tmp/${NODE_TAR}" -C "$HOME/.local" --strip-components=1
   rm -f "/tmp/${NODE_TAR}"
-  export PATH="$HOME/.local/bin:$PATH"
   echo "Node.js installed: $(node --version)"
+}
+
+if [[ -x "$HOME/.local/bin/node" ]]; then
+  echo "Node.js local runtime found: $("$HOME/.local/bin/node" --version)"
+else
+  install_local_node
 fi
 
 INSTALL_DIR="${WORBI_INSTALL_DIR:-$HOME/worbi}"
